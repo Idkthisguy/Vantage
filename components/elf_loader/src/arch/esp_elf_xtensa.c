@@ -87,6 +87,7 @@ int esp_elf_arch_relocate(esp_elf_t *elf, const elf32_rela_t *rela,
 
     switch (ELF_R_TYPE(rela->info)) {
     case R_XTENSA_RELATIVE:
+    case R_XTENSA_32:
         val = esp_elf_map_sym(elf, *where);
 #ifdef CONFIG_ELF_LOADER_CACHE_OFFSET
         *where = elf_remap_text(elf, val);
@@ -95,7 +96,6 @@ int esp_elf_arch_relocate(esp_elf_t *elf, const elf32_rela_t *rela,
 #endif
         break;
     case R_XTENSA_RTLD:
-    case R_XTENSA_32:
         break;
     case R_XTENSA_GLOB_DAT:
     case R_XTENSA_JMP_SLOT:

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 static const char *TAG = "OTA_ENGINE";
 
@@ -322,8 +323,7 @@ void ota_check_and_download_task(void *pvParameters) {
 
         fclose(fp);
 
-        // Valid binary check: must be HTTP 200 AND larger than 100KB (0x10000
-        // header sanity)
+        // Valid binary check: must be HTTP 200 AND larger than 100KB
         struct stat st;
         if (dl_err == ESP_OK && dl_status == 200 &&
             stat(UPDATE_FILE_PATH, &st) == 0 && st.st_size > 100000) {
@@ -425,7 +425,6 @@ static void ota_flash_task(void *pvParameters) {
 
 void execute_sd_ota_flash(void) {
   // Spawn a background task on Core 0 so it doesn't freeze Core 1's LVGL UI
-  // thread
   xTaskCreatePinnedToCore(ota_flash_task, "ota_flash_task", 8192, NULL, 5, NULL,
                           0);
 }
