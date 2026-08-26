@@ -1,0 +1,9 @@
+[submodule "components/LovyanGFX"]
+	path = components/LovyanGFX
+	url = https://github.com/lovyan03/LovyanGFX.git
+[submodule "components/cjson"]
+	path = components/cjson
+	url = https://github.com/DaveGamble/cJSON.git
+[submodule "components/esp32-elfloader"]
+	path = components/esp32-elfloader
+	url = https://github.com/niicoooo/esp32-elfloader.git

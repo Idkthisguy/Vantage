@@ -1,0 +1,51 @@
+name: Build & Publish VantageOS OTA
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          
+      # - name: Remove dependencies.lock
+        # run: rm -f dependencies.lock
+
+      - name: ESP-IDF Build
+        uses: espressif/esp-idf-ci-action@v1
+        env:
+          IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS: "1"
+        with:
+          esp_idf_version: v5.2.1
+          target: esp32s3
+          command: 'idf.py build'
+
+      - name: Prepare Release Assets
+        run: |
+          mkdir -p release_package
+          cp build/VantageOS.bin release_package/firmware.bin
+          if [ -d "assets" ]; then
+            cd assets && zip -r ../release_package/assets.zip . && cd ..
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.${{ github.run_number }}"
+          name: "VantageOS Build v1.0.${{ github.run_number }}"
+          fail_on_unmatched_files: false
+          files: |
+            release_package/firmware.bin
+            release_package/assets.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
