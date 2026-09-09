@@ -1,4 +1,5 @@
 #include "wm.h"
+#include "wm_anim.h"
 #include "esp_log.h"
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +73,7 @@ static lv_obj_t *app_container = NULL;
 static lv_obj_t *sys_keyboard = NULL;
 
 static window_node_t *window_stack = NULL;
+static lv_obj_t *s_launch_src = NULL;
 
 extern const app_descriptor_t wifi_app;
 
@@ -170,6 +172,7 @@ static void host_lv_obj_set_style_text_color_hex(lv_obj_t *obj,
 extern void *sdk_add_button(void *parent, const char *label,
                             void (*on_click_cb)(void *user_data),
                             void *user_data);
+extern void *sdk_create_window(const char *title);
 extern void *sdk_add_text(void *parent, const char *text);
 extern void sdk_show_toast(const char *message, uint32_t duration_ms);
 extern void sdk_get_data_path(const char *filename, char *out_path,
@@ -190,6 +193,9 @@ static const esp_elf_symbol_table_t host_symbols[] = {
     {"printf", (void *)printf},
 
     // System APIs
+    {"sdk_create_window", (void *)sdk_create_window},
+    {"sdk_add_button", (void *)sdk_add_button},
+    {"sdk_add_text", (void *)sdk_add_text},
     {"sdk_show_toast", (void *)sdk_show_toast},
     {"sdk_get_data_path", (void *)sdk_get_data_path},
 
@@ -685,6 +691,10 @@ void wm_open_app(const app_descriptor_t *app, app_control_block_t *process) {
   lv_obj_set_style_bg_color(node->root_view, lv_color_hex(0x121212), 0);
   lv_obj_set_style_bg_opa(node->root_view, LV_OPA_COVER, 0);
 
+  if (s_launch_src) {
+    lv_obj_set_style_opa(node->root_view, LV_OPA_TRANSP, 0);
+  }
+
   if (window_stack && window_stack->root_view) {
     ESP_LOGI(TAG, "[WM_DBG] Hiding previous active root_view: %p",
              window_stack->root_view);
@@ -708,8 +718,20 @@ void wm_open_app(const app_descriptor_t *app, app_control_block_t *process) {
     lv_obj_clear_flag(node->root_view, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(node->root_view);
 
+    if (s_launch_src) {
+      wm_animate_launch(s_launch_src, node->root_view);
+      s_launch_src = NULL;
+    }
+
     ESP_LOGI(TAG, "[WM_DBG] app->on_create finished.");
   }
+}
+
+void wm_open_app_animated(lv_obj_t *src, const app_descriptor_t *app,
+                          app_control_block_t *process) {
+  s_launch_src = src;
+  wm_open_app(app, process);
+  s_launch_src = NULL;
 }
 
 void wm_close_current(void) {
@@ -990,11 +1012,11 @@ const app_descriptor_t wifi_app = {.id = "com.vantage.wifi",
                                    .on_destroy = NULL};
 
 static void on_wifi_btn_tap(lv_obj_t *obj, void *user_data) {
-  wm_open_app(&wifi_app, NULL);
+  wm_open_app_animated(obj, &wifi_app, NULL);
 }
 
 static void on_fm_btn_tap(lv_obj_t *obj, void *user_data) {
-  wm_open_app(&file_manager_app, NULL);
+  wm_open_app_animated(obj, &file_manager_app, NULL);
 }
 
 static lv_obj_t *home_apps_container = NULL;
